@@ -2,14 +2,36 @@ package modproxy
 
 import (
 	"testing"
+
+	"golang.org/x/mod/semver"
 )
 
 func TestLatest(t *testing.T) {
-	mod, err := Latest("github.com/go-redis/redis", true)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		modpath string
+		minver  string
+	}{
+		{
+			modpath: "github.com/go-redis/redis",
+			minver:  "v8",
+		},
+		{
+			modpath: "github.com/coreos/go-systemd",
+			minver:  "v22",
+		},
 	}
-	t.Logf("Latest %s %s", mod.Path, mod.MaxVersion("", false))
+	for _, tt := range tests {
+		t.Run(tt.modpath, func(t *testing.T) {
+			mod, err := Latest(tt.modpath, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ver := mod.MaxVersion("", false)
+			if semver.Compare(ver, tt.minver) < 0 {
+				t.Fatalf("max version %q, is lower than min expected %q", ver, tt.minver)
+			}
+		})
+	}
 }
 
 func TestQuery(t *testing.T) {
